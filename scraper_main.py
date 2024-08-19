@@ -10,6 +10,11 @@ from scraper_images import get_images_from_image_list_concurrently
 from aux_scraper import headersX, get_proxy_new
 from aux_parse import clean_html, procces_characteristics
 
+#load .env file
+from dotenv import load_dotenv
+load_dotenv()
+
+
 def scrape(input_info):
     main_folder = os.getenv('OUTPUT_FOLDER')
     """Function to scrape the given URL and process data."""
@@ -58,7 +63,7 @@ def scrape(input_info):
         "modelo": modelo,
         "sku": sku,
         "category": category,
-        "pos": 'pos'
+        "pos": url
     }
 
     filenameclean = f'{main_folder}/clean/{input_info[1]}_{cleaned_url}.json'
@@ -79,7 +84,7 @@ def collector():
     input_info_block = read_inputs(sh)
 
     # Use multiprocessing to scrape data
-    with ProcessPoolExecutor(max_workers=5) as executor:
+    with ProcessPoolExecutor() as executor:
         results = executor.map(scrape, input_info_block)
 
     resolved_results = list(results)

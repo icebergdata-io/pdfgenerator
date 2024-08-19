@@ -24,8 +24,13 @@ decorator==5.1.1
     # via retry
 fastapi==0.112.1
     # via -r requirements.in
+fpdf==1.7.2
+    # via -r requirements.in
 google-api-core==2.19.1
-    # via google-api-python-client
+    # via
+    #   google-api-python-client
+    #   google-cloud-core
+    #   google-cloud-storage
 google-api-python-client==2.141.0
     # via pygsheets
 google-auth==2.34.0
@@ -35,12 +40,24 @@ google-auth==2.34.0
     #   google-api-python-client
     #   google-auth-httplib2
     #   google-auth-oauthlib
+    #   google-cloud-core
+    #   google-cloud-storage
 google-auth-httplib2==0.2.0
     # via google-api-python-client
 google-auth-oauthlib==1.2.1
     # via
     #   -r requirements.in
     #   pygsheets
+google-cloud-core==2.4.1
+    # via google-cloud-storage
+google-cloud-storage==2.18.2
+    # via -r requirements.in
+google-crc32c==1.5.0
+    # via
+    #   google-cloud-storage
+    #   google-resumable-media
+google-resumable-media==2.7.2
+    # via google-cloud-storage
 googleapis-common-protos==1.63.2
     # via google-api-core
 h11==0.14.0
@@ -88,11 +105,16 @@ pyparsing==3.1.2
     # via httplib2
 python-dateutil==2.9.0.post0
     # via pandas
+python-dotenv==1.0.1
+    # via -r requirements.in
 pytz==2024.1
-    # via pandas
+    # via
+    #   -r requirements.in
+    #   pandas
 requests==2.32.3
     # via
     #   google-api-core
+    #   google-cloud-storage
     #   requests-oauthlib
 requests-oauthlib==2.0.0
     # via google-auth-oauthlib

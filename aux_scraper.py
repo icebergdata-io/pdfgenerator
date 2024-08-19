@@ -1,5 +1,8 @@
 import random
 import os
+#load .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 def get_proxy_new()-> dict:
     """

@@ -3,6 +3,9 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 from aux_scraper import get_proxy_new, headersX
 from retry import retry
+#load .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 @retry(tries=3, delay=1)
 def request_image(url, timeout):
