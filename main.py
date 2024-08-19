@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from google.auth import default
@@ -39,6 +40,6 @@ async def update_google_sheet():
 
     return {"message": "Google Sheet updated!", "sheet_title": sh.title, "results": results}
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

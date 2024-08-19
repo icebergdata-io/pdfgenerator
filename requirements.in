@@ -16,3 +16,4 @@ python-dotenv
 google-cloud-storage
 pytz
 Pillow
+google-auth-httplib2
