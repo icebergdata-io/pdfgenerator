@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pygsheets
+google-auth
+google-auth-oauthlib
+bs4
+pandas
