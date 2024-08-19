@@ -42,6 +42,7 @@ def scrape(input_info):
     filenameraw = f'{main_folder}/raw/{input_info[1]}_{cleaned_url}.json'
     with open(filenameraw, 'w') as f:
         json.dump(json_data, f, indent=4)
+        
 
     sku = json_data['props']['pageProps']['product']['sku']
     name = json_data['props']['pageProps']['product']['name']
