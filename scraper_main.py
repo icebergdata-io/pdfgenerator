@@ -50,7 +50,7 @@ def scrape(input_info):
 
     taxonomy = get_category(sku)
     category = input_info[1] if input_info[1] else taxonomy[0]
-    sub_cat = taxonomy[1] if taxonomy[1] else ''
+    sub_cat = taxonomy[1] if input_info[1] else taxonomy[0]
     description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
     image_links = json_data['props']['pageProps']['product']['media']
     descr_list_, modelo = procces_characteristics(characteristics)
