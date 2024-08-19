@@ -22,6 +22,7 @@ def scrape(input_info):
     cleaned_url = url.replace('https://www.coppel.com', '').replace('/', '_').replace('?', '_').replace('=', '_').replace('&', '_').replace('%', '_').replace(':', '_')
 
     try:
+        print(f"Scraping {url}", flush=True)
         response = requests.get(url=url, headers=headersX, proxies=get_proxy_new(), timeout=30)
         response.raise_for_status()
     except requests.exceptions.RequestException:
@@ -31,6 +32,7 @@ def scrape(input_info):
         f.write(response.text)
 
     try:
+        print(f"Parsing {url}", flush=True)
         soup = BeautifulSoup(response.text, 'lxml')
         json_data = json.loads(soup.find('script', {"id": "__NEXT_DATA__"}).text)
     except (AttributeError, json.JSONDecodeError):
@@ -67,11 +69,21 @@ def scrape(input_info):
     }
 
     filenameclean = f'{main_folder}/clean/{input_info[1]}_{cleaned_url}.json'
+    print(f"Data saved to {filenameclean}", flush=True)
     with open(filenameclean, 'w', encoding='utf-8') as f:
         json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
-
+    
+    print(f"Scraping images for {sku}", flush=True)
     Imageslocations = get_images_from_image_list_concurrently(image_links[:4], sku)
-
+    sh = get_sheet()
+    i = input_info[3]
+    sh[3].update_value(f'A{i+2}', feature_to_create_pdf['name'])
+    sh[3].update_value(f'B{i+2}', feature_to_create_pdf['description'])
+    sh[3].update_value(f'C{i+2}', feature_to_create_pdf['marca'])
+    sh[3].update_value(f'D{i+2}', feature_to_create_pdf['sku'])
+    sh[3].update_value(f'E{i+2}', feature_to_create_pdf['pos'])
+    sh[3].update_value(f'F{i+2}', feature_to_create_pdf['category'])
+    sh[3].update_value(f'G{i+2}', str(feature_to_create_pdf['image_links']))
     return feature_to_create_pdf
 
 
@@ -81,7 +93,14 @@ def collector():
 
     # Get the Google Sheet Data
     sh = get_sheet()
+
+    #delete content below headers
+    sh[3].clear(start='A2', end='G1000')
+
     input_info_block = read_inputs(sh)
+    #add index to input_info_block
+    for i, item in enumerate(input_info_block):
+        item.append(i)
 
     # Use multiprocessing to scrape data
     with ProcessPoolExecutor() as executor:

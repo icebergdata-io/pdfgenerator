@@ -1,34 +1,26 @@
 import os
 import json
-import tempfile
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 import pygsheets
 import shutil
 
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+
 def get_credentials():
-    creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-    if not creds_json:
-        raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is not set")
+
+    #also upload to bucket
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets','https://www.googleapis.com/auth/cloud-platform']
     
-    creds_dict = json.loads(creds_json)
-    
-    # Create a temporary file to store the credentials
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
-        json.dump(creds_dict, temp_file)
-        temp_file_path = temp_file.name
-    
-    # Use the temporary file to create credentials
+    SERVICE_ACCOUNT_FILE = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     creds = service_account.Credentials.from_service_account_file(
-        temp_file_path, 
-        scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-    )
-    
-    # Delete the temporary file
-    os.unlink(temp_file_path)
-    
-    return creds
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    return creds     
+
 
 def get_sheet():
     creds = get_credentials()

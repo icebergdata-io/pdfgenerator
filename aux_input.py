@@ -1,10 +1,14 @@
 
 from aux_context import get_sheet
+import os 
 
 def read_inputs(sh):
     file_name   = sh[1].get_named_range('_pdf_name').cells[0][0].value
     user        = sh[1].get_named_range('_email').cells[0][0].value
     url_values  = sh[1].get_named_range('_input_urls').cells
+    #set enviromental variables
+    os.environ['FILENAMETOSAVE'] = file_name
+    os.environ['USER'] = user
 
     #keep only the urls that contain coppel.com
     url_values = [i for i in url_values if i[0].value.find('coppel.com') != -1]

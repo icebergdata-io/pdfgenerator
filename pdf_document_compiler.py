@@ -1,49 +1,24 @@
 import os
 import glob
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import json
 from PIL import Image
+from retry import retry
 from fpdf import FPDF
-from datetime import datetime
 from pytz import timezone
-from google.cloud import storage 
-from google.auth import default
-
+from datetime import datetime
+from google.oauth2 import service_account
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pdf_images_generator import render_page
+from aux_gcloud import pdf_to_gcloud_bucket
 from aux_pdf import load_product_data_and_images
 from dotenv import load_dotenv
-import json
-from google.oauth2 import service_account
-
+from aux_context import get_sheet
+from google.cloud import storage
+from datetime import timedelta
+from aux_gcloud import generate_signed_url
 
 # Load environment variables
 load_dotenv()
-
-def get_credentials():
-    creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-    if not creds_json:
-        raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is not set")
-    
-    creds_dict = json.loads(creds_json)
-    return service_account.Credentials.from_service_account_info(creds_dict)
-
-def pdf_to_gcloud_bucket(pdf_file):
-    try:
-        credentials = get_credentials()
-
-        # Set up credentials
-        storage_client = storage.Client(credentials=credentials, project=credentials.project_id)
-
-        # Set up bucket
-        bucket_name = 'pdfgeneratorcoppel'
-        bucket = storage_client.bucket(bucket_name)
-
-        # Upload the PDF
-        blob = bucket.blob(os.path.basename(pdf_file))
-        blob.upload_from_filename(pdf_file)
-        print(f"PDF uploaded to Google Cloud Storage: {pdf_file}")
-    except Exception as e:
-        print(f"Error uploading PDF to Google Cloud Storage: {str(e)}")
-
 
 def process_page(json_files, i, image_folder, template_path):
     # Load data for the first product
@@ -98,7 +73,7 @@ def compile_pdf():
 
     timezoneodmx = timezone('America/Mexico_City')
     date_string_now_cdmx = datetime.now(timezoneodmx).strftime("%Y-%m-%d_%H:%M:%S")
-    filename = f"product_catalog_{date_string_now_cdmx}.pdf"
+    filename = f"{os.getenv('FILENAMETOSAVE')}_{date_string_now_cdmx}_{os.getenv('USER')}.pdf"
     pdf_path = f"output/pdfs/{filename}"
     # Save the final PDF
     pdf.output(pdf_path)
@@ -106,6 +81,16 @@ def compile_pdf():
 
     # Upload the PDF to Google Cloud Storage
     pdf_to_gcloud_bucket(pdf_path)
+
+    # Example usage
+    bucket_name = 'pdfgeneratorcoppel'
+    blob_name = filename
+    expiration_time = 90*24  # URL valid for 1 hour
+
+    signed_url = generate_signed_url(bucket_name, blob_name, expiration_time)
+    print(f"Downloadable link: {signed_url}")
+    sh=get_sheet()
+    sh[1].update_value('C16', signed_url)
 
 if __name__ == "__main__":
     compile_pdf()
