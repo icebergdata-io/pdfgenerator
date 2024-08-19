@@ -5,8 +5,7 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 
 from aux_scraper import get_proxy_new, headersX
-from io import BytesIO
-from PIL import Image
+
 
 def get_images_from_image_list(image_url, sku):
     main_folder = os.getenv('OUTPUT_FOLDER')

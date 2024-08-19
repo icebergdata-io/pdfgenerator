@@ -3,3 +3,4 @@ uvicorn==0.22.0
 pygsheets==2.0.6
 google-auth==2.21.0
 google-auth-oauthlib==1.0.0
+bs4==0.0.1
