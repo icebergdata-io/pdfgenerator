@@ -1,2 +1,51 @@
-# Auto detect text files and perform LF normalization
+# Auto-detect text files and normalize line endings to LF
 * text=auto
+
+# Python-specific files
+*.py     text
+*.pyi    text
+*.ipynb  text
+
+# Handle common text-based files in a Python project
+*.txt    text
+*.md     text
+*.json   text
+*.yaml   text
+*.yml    text
+*.toml   text
+*.html   text
+*.css    text
+*.js     text
+*.xml    text
+
+# Handle binary files correctly
+*.jpg    binary
+*.jpeg   binary
+*.png    binary
+*.gif    binary
+*.pdf    binary
+*.zip    binary
+*.exe    binary
+*.dll    binary
+
+# Handle common data files
+*.csv    text
+*.tsv    text
+*.parquet binary
+*.h5     binary
+
+# Handle shell scripts and other common scripts
+*.sh     eol=lf
+*.bat    eol=crlf
+
+# Jupyter Notebook handling
+*.ipynb  text eol=lf
+
+# Ignore compiled Python files and environment
+*.pyc    binary
+__pycache__/ binary
+.env/*   binary
+.venv/*  binary
+
+# Specific to Visual Studio Code
+.vscode/* text

@@ -24,6 +24,8 @@ async def update_google_sheet():
     # Update a cell in the spreadsheet
     sh[1].update_value('E10', "Conectado2")
 
+    
+
     return {"message": "Google Sheet updated!", "sheet_title": sh.title}
 
 if __name__ == "__main__":

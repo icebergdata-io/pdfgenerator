@@ -1,3 +1,5 @@
 *ServiceAccount*
 *.en*
 *__pycache__/
+*deploy*
+*output*
