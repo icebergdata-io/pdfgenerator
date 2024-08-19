@@ -1,11 +1,13 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-import os
-import pygsheets
 from google.auth import default
 from scraper_main import collector
 from aux_context import get_sheet
 from pdf_document_compiler import compile_pdf
+
+from dotenv import load_dotenv
+load_dotenv()
+
 
 app = FastAPI()
 
@@ -37,6 +39,6 @@ async def update_google_sheet():
 
     return {"message": "Google Sheet updated!", "sheet_title": sh.title, "results": results}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
