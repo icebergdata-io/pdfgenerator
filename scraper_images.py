@@ -7,7 +7,7 @@ from retry import retry
 from dotenv import load_dotenv
 load_dotenv()
 
-@retry(tries=3, delay=1)
+@retry(tries=2, delay=1)
 def request_image(url, timeout):
     return requests.get(url=url, headers=headersX, proxies=get_proxy_new(), timeout=timeout)
 
@@ -15,7 +15,7 @@ def request_image(url, timeout):
 def get_images_from_image_list(image_url, sku):
     main_folder = os.getenv('OUTPUT_FOLDER')
     image_name = os.path.basename(image_url)
-    timeout = int(os.getenv('IMAGESTIMEOUT', 30))  # Default timeout if not set
+    timeout = int(os.getenv('IMAGESTIMEOUT', 10))  # Default timeout if not set
 
     try:
         response = request_image(image_url, timeout)
@@ -42,7 +42,7 @@ def get_images_from_image_list(image_url, sku):
 
 
 def get_images_from_image_list_concurrently(image_list, sku):
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         locations = executor.map(lambda url: get_images_from_image_list(url, sku), image_list)
         locations_list = list(filter(None, locations))  # Filter out None values
     

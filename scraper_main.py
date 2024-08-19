@@ -77,13 +77,18 @@ def scrape(input_info):
     Imageslocations = get_images_from_image_list_concurrently(image_links[:4], sku)
     sh = get_sheet()
     i = input_info[3]
-    sh[3].update_value(f'A{i+2}', feature_to_create_pdf['name'])
-    sh[3].update_value(f'B{i+2}', feature_to_create_pdf['description'])
-    sh[3].update_value(f'C{i+2}', feature_to_create_pdf['marca'])
-    sh[3].update_value(f'D{i+2}', feature_to_create_pdf['sku'])
-    sh[3].update_value(f'E{i+2}', feature_to_create_pdf['pos'])
-    sh[3].update_value(f'F{i+2}', feature_to_create_pdf['category'])
-    sh[3].update_value(f'G{i+2}', str(feature_to_create_pdf['image_links']))
+    values_to_update = [
+    feature_to_create_pdf['name'],
+    feature_to_create_pdf['description'],
+    feature_to_create_pdf['marca'],
+    feature_to_create_pdf['sku'],
+    feature_to_create_pdf['pos'],
+    feature_to_create_pdf['category'],
+    str(feature_to_create_pdf['image_links'])
+    ]
+
+    # Update the entire row at once
+    sh[3].update_row(i+2, values_to_update)
     return feature_to_create_pdf
 
 
@@ -103,7 +108,7 @@ def collector():
         item.append(i)
 
     # Use multiprocessing to scrape data
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=5) as executor:
         results = executor.map(scrape, input_info_block)
 
     resolved_results = list(results)
