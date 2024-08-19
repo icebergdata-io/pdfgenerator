@@ -3,7 +3,9 @@ import os
 #load .env file
 from dotenv import load_dotenv
 load_dotenv()
+from retry import retry
 
+@retry(tries=3)
 def get_proxy_new()-> dict:
     """
     It returns a dictionary with the keys 'http' and 'https' and the values are the proxy address to use the datacenter proxy

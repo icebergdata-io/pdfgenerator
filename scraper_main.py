@@ -49,8 +49,12 @@ def scrape(input_info):
     characteristics = json_data['props']['pageProps']['product']['characteristics']
 
     taxonomy = get_category(sku)
-    category = input_info[1] if input_info[1] else taxonomy[0]
-    sub_cat = taxonomy[1] if input_info[1] else taxonomy[0]
+    if input_info[1] :
+        category = input_info[1]
+        sub_cat = taxonomy[0]
+    else :
+        category = taxonomy[0]
+        sub_cat = taxonomy[1]
     description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
     image_links = json_data['props']['pageProps']['product']['media']
     descr_list_, modelo = procces_characteristics(characteristics)
@@ -60,7 +64,7 @@ def scrape(input_info):
         "image_links": image_links,
         "description": description,
         "descr_list": descr_list_,
-        "sub_cat": sub_cat.upper(),
+        "sub_cat": sub_cat.upper() if sub_cat else "OTROS",
         "marca": marca,
         "modelo": modelo,
         "sku": sku,
