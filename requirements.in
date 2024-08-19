@@ -15,3 +15,4 @@ FPDF
 python-dotenv
 google-cloud-storage
 pytz
+Pillow

@@ -78,6 +78,8 @@ oauthlib==3.2.2
     # via requests-oauthlib
 pandas==2.2.2
     # via -r requirements.in
+pillow==10.4.0
+    # via -r requirements.in
 pillow-avif-plugin==1.4.6
     # via -r requirements.in
 proto-plus==1.24.0
