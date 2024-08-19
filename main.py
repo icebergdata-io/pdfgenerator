@@ -1,30 +1,25 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 import os
 import pygsheets
 from google.auth import default
-
+from scraper_main import collector
+from aux_gsheet import get_sheet
 
 app = FastAPI()
 
 @app.get("/")
+async def redirect_to_docs():
+    return RedirectResponse(url="/docs")
+
+@app.get("/runner")
 async def update_google_sheet():
-    # Automatically load the credentials and project info from ADC
-    credentials, project = default()
-
-    # Ensure the credentials have the correct scopes
-    credentials = credentials.with_scopes(['https://www.googleapis.com/auth/spreadsheets'])
-
-    # Authorize pygsheets using the loaded credentials
-    gc = pygsheets.authorize(custom_credentials=credentials)
-
-    # Use the Google Sheets API
-    gheet_id = os.getenv('GSHEET_ID')
-    sh = gc.open_by_key(gheet_id)
-
+    sh = get_sheet()
     # Update a cell in the spreadsheet
-    sh[1].update_value('E10', "Conectado2")
+    sh[1].update_value('E10', "starting")
 
-    
+    # Run the scraper
+    collector()
 
     return {"message": "Google Sheet updated!", "sheet_title": sh.title}
 

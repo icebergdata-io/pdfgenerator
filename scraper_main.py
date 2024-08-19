@@ -92,7 +92,8 @@ def setup_folders():
         f'{main_folder}/search'
     ])
 
-if __name__ == '__main__':
+
+def collector():
     # Setup folders
     setup_folders()
 
@@ -105,3 +106,8 @@ if __name__ == '__main__':
         results = executor.map(scrape, input_info_block)
 
     resolved_results = list(results)
+    return resolved_results
+
+
+if __name__ == '__main__':
+    collector()
