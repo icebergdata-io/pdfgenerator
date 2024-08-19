@@ -4,7 +4,7 @@ import os
 import pygsheets
 from google.auth import default
 from scraper_main import collector
-from aux_gsheet import get_sheet
+from aux_context import get_sheet
 
 app = FastAPI()
 

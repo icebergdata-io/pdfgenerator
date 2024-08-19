@@ -10,7 +10,9 @@ def get_proxy_new()-> dict:
     #3victors
     username = os.getenv('PROXYUSERNAME')
     password = os.getenv('PROXYPASSWORD')
-    country = 'MX'
+    #PICK ONE LATAM COUNTRY, SPANISH SPEACKING
+    country = ['MX','CO']
+    country = random.choice(country)
 
     port = 22225
     super_proxy_url = ('http://%s-country-%s:%s@zproxy.lum-superproxy.io:%d' %

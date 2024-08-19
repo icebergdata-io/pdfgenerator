@@ -6,3 +6,5 @@ google-auth-oauthlib
 bs4
 pandas
 lxml
+pillow-avif-plugin
+retry

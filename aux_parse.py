@@ -48,6 +48,10 @@ def procces_characteristics(characteristics):
     # Get the 'name' column from the original DataFrame (before exploding)
     charcteristic_keys = df_characteristics_exploded['name']
 
+    # Reset the index of both Series to match the length of the other
+    charcteristic_keys = charcteristic_keys.reset_index(drop=True)
+    charcteristic_values = charcteristic_values.reset_index(drop=True)
+    
     # Concatenate 'name' and 'value' into a single DataFrame and convert to list of dictionaries
     descr_list_ = pd.concat([charcteristic_keys, charcteristic_values], axis=1).to_dict('records')
 

@@ -1,22 +1,14 @@
 import os
 import json
-import shutil
 import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ProcessPoolExecutor
-from aux_gsheet import get_sheet
+from aux_context import get_sheet, setup_folders
 from aux_input import read_inputs
 from scraper_category import get_category
 from scraper_images import get_images_from_image_list_concurrently
 from aux_scraper import headersX, get_proxy_new
 from aux_parse import clean_html, procces_characteristics
-
-
-
-def create_directories(paths):
-    """Function to create necessary directories."""
-    for path in paths:
-        os.makedirs(path, exist_ok=True)
 
 def scrape(input_info):
     main_folder = os.getenv('OUTPUT_FOLDER')
@@ -73,25 +65,9 @@ def scrape(input_info):
     with open(filenameclean, 'w', encoding='utf-8') as f:
         json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
 
-    Imageslocations = get_images_from_image_list_concurrently(image_links, sku)
+    Imageslocations = get_images_from_image_list_concurrently(image_links[:4], sku)
 
     return feature_to_create_pdf
-
-def setup_folders():
-    # Define main_folder at the top
-    main_folder = os.getenv('OUTPUT_FOLDER')
-
-    if os.path.exists(main_folder):
-        shutil.rmtree(main_folder)
-
-    """Function to setup folders (create directories)."""
-    create_directories([
-        f'{main_folder}/html',
-        f'{main_folder}/raw',
-        f'{main_folder}/clean',
-        f'{main_folder}/images',
-        f'{main_folder}/search'
-    ])
 
 
 def collector():
