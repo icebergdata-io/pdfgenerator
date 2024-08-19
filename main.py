@@ -17,6 +17,7 @@ app = FastAPI()
 async def redirect_to_docs():
     return RedirectResponse(url="/docs")
 
+
 @app.get("/runner")
 async def update_google_sheet():
     sh = get_sheet()
