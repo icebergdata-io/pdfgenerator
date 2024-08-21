@@ -43,22 +43,26 @@ def scrape(input_info):
         json.dump(json_data, f, indent=4)
         
 
-    sku = json_data['props']['pageProps']['product']['sku']
-    name = json_data['props']['pageProps']['product']['name']
-    marca = json_data['props']['pageProps']['product']['brand']
-    characteristics = json_data['props']['pageProps']['product']['characteristics']
+    # Handle the exception, maybe skip this entry or log the error
+    try:
+        sku = json_data['props']['pageProps']['product']['sku']
+        name = json_data['props']['pageProps']['product']['name']
+        marca = json_data['props']['pageProps']['product']['brand']
+        characteristics = json_data['props']['pageProps']['product']['characteristics']
 
-    taxonomy = get_category(sku)
-    if input_info[1] :
-        category = input_info[1]
-        sub_cat = taxonomy[0]
-    else :
-        category = taxonomy[0]
-        sub_cat = taxonomy[1]
-    description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
-    image_links = json_data['props']['pageProps']['product']['media']
-    descr_list_, modelo = procces_characteristics(characteristics)
+        taxonomy = get_category(sku)
+        if input_info[1] :
+            category = input_info[1]
+            sub_cat = taxonomy[0]
+        else :
+            category = taxonomy[0]
+            sub_cat = taxonomy[1]
+        description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
+        image_links = json_data['props']['pageProps']['product']['media']
+        descr_list_, modelo = procces_characteristics(characteristics)
 
+    except KeyError as e:
+        print(f"PARSING ALERT: {e} - at {url}")
     feature_to_create_pdf = {
         "name": name,
         "image_links": image_links,
@@ -95,6 +99,27 @@ def scrape(input_info):
     sh[3].update_row(i+2, values_to_update)
     return feature_to_create_pdf
 
+def safe_scrape(input_info):
+    try:
+        return scrape(input_info)
+    except Exception as e:
+        print(f"Error scraping {input_info[0]}: {e}")
+
+        sh = get_sheet()
+        i = input_info[3]
+        values_to_update = [
+        "error",
+        "error",
+        "error",
+        "error",
+        input_info[0],
+        "error",
+        "error",
+        ]
+
+        # Update the entire row at once
+        sh[3].update_row(i+2, values_to_update)
+        return None
 
 def collector():
     # Setup folders
