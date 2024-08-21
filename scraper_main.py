@@ -140,7 +140,7 @@ def collector():
 
     # Use multiprocessing to scrape data
     with ProcessPoolExecutor(max_workers=5) as executor:
-        results = executor.map(scrape, input_info_block)
+        results = executor.map(safe_scrape, input_info_block)
 
     resolved_results = list(results)
     return resolved_results

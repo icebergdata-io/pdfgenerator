@@ -40,6 +40,21 @@ def get_images_from_image_list(image_url, sku):
     
     return filename_image
 
+#create get_images_from_image_list and return empty white image in case 
+def safe_get_images_from_image_list(image_url, sku):
+    try:
+        return get_images_from_image_list(image_url, sku)
+    except Exception as e:
+        print(f"Error scraping {image_url}: {e}")
+        #create blank image in case of error
+        main_folder = os.getenv('OUTPUT_FOLDER')
+        image_folder = os.path.join(main_folder, 'images', sku)
+        os.makedirs(image_folder, exist_ok=True)
+        filename_image = os.path.join(image_folder, 'blank.jpg')
+        with open(filename_image, 'wb') as file:
+            file.write(b'')
+        return filename_image
+
 
 def get_images_from_image_list_concurrently(image_list, sku):
     with ThreadPoolExecutor(max_workers=4) as executor:
