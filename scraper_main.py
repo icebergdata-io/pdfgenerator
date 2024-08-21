@@ -14,7 +14,9 @@ from aux_parse import clean_html, procces_characteristics
 from dotenv import load_dotenv
 load_dotenv()
 
+from retry import retry
 
+@retry(3)
 def scrape(input_info):
     main_folder = os.getenv('OUTPUT_FOLDER')
     """Function to scrape the given URL and process data."""
@@ -116,7 +118,7 @@ def safe_scrape(input_info):
         "error",
         "error",
         ]
-
+        sh = get_sheet()
         # Update the entire row at once
         sh[3].update_row(i+2, values_to_update)
         return None
