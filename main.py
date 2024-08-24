@@ -10,13 +10,13 @@ from pdf_document_compiler import compile_pdf
 from time import sleep
 from datetime import datetime
 import pytz
+import uvicorn
 
 app = FastAPI()
 
 @app.get("/")
 async def redirect_to_docs():
     return RedirectResponse(url="/docs")
-
 
 @app.get("/runner")
 async def update_google_sheet():
@@ -31,27 +31,29 @@ async def update_google_sheet():
     print("Starting the process")
     # Run the scraper
     results = collector()
-    # results = []
     print("Results collected")
-    sh[1].update_value('E10', "Compiling PDf")
+    sh[1].update_value('E10', "Compiling PDF")
 
     # Compile the PDF
     compile_pdf()
-    sh[1].update_value('E10', "Uploading PDf")
+    sh[1].update_value('E10', "Uploading PDF")
     
     sleep(1)
     # Upload the PDF to Google Cloud Storage
     sh[1].update_value('E10', "Uploaded")
 
-
     timezoneodmx = pytz.timezone('America/Mexico_City')
-    date_string_now_cdmx = datetime.now(timezoneodmx).strftime("%Y-%m-%d_%H:%M:%S")
+    date_string_now_cdmx = datetime.now(timezoneodmx).strftime("%Y-%m-%d %H:%M:%S")
 
     sh[1].update_value('E9', "completed at: " + date_string_now_cdmx)
-    return {"message": "Google Sheet updated!", "sheet_title": sh.title, "results": results}
     
+    # Get the signed URL from the Google Sheet
+    signed_url = sh[1].get_value('C16')
+    
+    # Redirect to the signed URL
+    return RedirectResponse(url=signed_url)
+
 if __name__ == "__main__":
-    # import uvicorn
-    import asyncio
-    # uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-    asyncio.run(update_google_sheet())
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host=host, port=port)

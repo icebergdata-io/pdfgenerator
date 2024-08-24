@@ -43,7 +43,7 @@ def add_ocr_layer(input_pdf, output_pdf):
         pdf_writer.write(f)
 
 if __name__ == "__main__":
-    input_pdf = 'output/product_catalog.pdf'
+    input_pdf = 'output/pdfs/STARHAUS_2024-08-20_19:57:40_daniel.santamaria@iceberg-data.com.pdf'
     output_pdf = 'output/product_catalog_searchable.pdf'
     add_ocr_layer(input_pdf, output_pdf)
     print(f"Created searchable PDF: {output_pdf}")
