@@ -1,8 +1,10 @@
 import os
 from aux_gcloud import load_dotenv_full
 load_dotenv_full()
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from google.auth import default
 from scraper_main import collector
 from aux_context import get_sheet
@@ -14,12 +16,28 @@ import uvicorn
 
 app = FastAPI()
 
-@app.get("/")
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configure Jinja2 templates
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
 async def redirect_to_docs():
     return RedirectResponse(url="/docs")
 
-@app.get("/runner")
-async def update_google_sheet():
+@app.get("/runner", response_class=HTMLResponse)
+async def update_google_sheet(request: Request):
+    return templates.TemplateResponse("loading.html", {"request": request})
+
+@app.get("/generate_pdf")
+async def generate_pdf():
     sh = get_sheet()
     # Update a cell in the spreadsheet
 
@@ -50,8 +68,7 @@ async def update_google_sheet():
     # Get the signed URL from the Google Sheet
     signed_url = sh[1].get_value('C16')
     
-    # Redirect to the signed URL
-    return RedirectResponse(url=signed_url)
+    return {"url": signed_url}
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "127.0.0.1")
