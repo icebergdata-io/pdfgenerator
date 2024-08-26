@@ -68,6 +68,9 @@ async def generate_pdf():
     # Get the signed URL from the Google Sheet
     signed_url = sh[1].get_value('C16')
     
+    #TODO OCR integration and make sure it takes a few seconds
+
+    
     return {"url": signed_url}
 
 if __name__ == "__main__":
