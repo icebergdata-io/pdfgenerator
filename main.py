@@ -51,9 +51,15 @@ async def generate_pdf():
     results = collector()
     print("Results collected")
     sh[1].update_value('E10', "Compiling PDF")
-
+    layout = sh[1].get_value('E13')
+    if "horizontal" in layout.lower():
+        layout = "horizontal"
+    elif "vertical" in layout.lower():
+        layout = "vertical"
+        
+    print(f"Layout: {layout}")
     # Compile the PDF
-    compile_pdf()
+    compile_pdf(layout)
     sh[1].update_value('E10', "Uploading PDF")
     
     sleep(1)

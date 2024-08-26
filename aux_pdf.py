@@ -42,8 +42,15 @@ def draw_features(drawer, features, x_position, y_position, font, max_features_p
         y_position += 20
 
 # Function to draw product images on the image
-def draw_product_images(img, image_files, y_offset, x_offset):
-    for idx, image_file in enumerate(image_files[:4]):
-        product_image = Image.open(image_file).resize((110, 110), Image.Resampling.LANCZOS)
-        img_x_offset = left_margin + (idx * 160) + x_offset
-        img.paste(product_image, (img_x_offset, y_offset))
+def draw_product_images(img, image_files, y_offset, x_offset, is_vertical=False):
+    if is_vertical:
+        for idx, image_file in enumerate(image_files[:4]):
+            product_image = Image.open(image_file).resize((110, 110), Image.Resampling.LANCZOS)
+            img_x_offset = left_margin + (idx * 160) + x_offset
+            img.paste(product_image, (img_x_offset, y_offset))
+    else:
+        for idx, image_file in enumerate(image_files[:4]):
+            product_image = Image.open(image_file).resize((110, 110), Image.Resampling.LANCZOS)
+            img_x_offset = left_margin + (idx * 160) + x_offset
+            img.paste(product_image, (img_x_offset, y_offset))
+    
