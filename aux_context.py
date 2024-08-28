@@ -30,7 +30,7 @@ def get_sheet():
 
 def setup_folders():
     # Define main_folder at the top
-    main_folder = os.getenv('OUTPUT_FOLDER')
+    main_folder = os.getenv('OUTPUT_FOLDER', 'output')
 
     if os.path.exists(main_folder):
         shutil.rmtree(main_folder)

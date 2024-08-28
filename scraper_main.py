@@ -9,6 +9,7 @@ from scraper_category import get_category
 from scraper_images import get_images_from_image_list_concurrently
 from aux_scraper import headersX, get_proxy_new
 from aux_parse import clean_html, procces_characteristics
+from utils import create_output_folders
 
 #load .env file
 from dotenv import load_dotenv
@@ -27,25 +28,35 @@ def scrape(input_info):
         print(f"Scraping {url}", flush=True)
         response = requests.get(url=url, headers=headersX, proxies=get_proxy_new(), timeout=30)
         response.raise_for_status()
-    except requests.exceptions.RequestException:
-        return None
+        print(f"Successfully retrieved content from {url}", flush=True)
+    except requests.exceptions.RequestException as e:
+        print(f"Error scraping {url}: {e}", flush=True)
+        raise
 
-    with open(f'{main_folder}/html/{cleaned_url}.html', 'w') as f:
-        f.write(response.text)
+    try:
+        with open(f'{main_folder}/html/{cleaned_url}.html', 'w', encoding='utf-8') as f:
+            f.write(response.text)
+        print(f"HTML content saved to {main_folder}/html/{cleaned_url}.html", flush=True)
+    except IOError as e:
+        print(f"Error saving HTML content: {e}", flush=True)
 
     try:
         print(f"Parsing {url}", flush=True)
         soup = BeautifulSoup(response.text, 'lxml')
         json_data = json.loads(soup.find('script', {"id": "__NEXT_DATA__"}).text)
-    except (AttributeError, json.JSONDecodeError):
+        print(f"Successfully parsed JSON data from {url}", flush=True)
+    except (AttributeError, json.JSONDecodeError) as e:
+        print(f"Error parsing JSON data from {url}: {e}", flush=True)
         return None
 
     filenameraw = f'{main_folder}/raw/{input_info[1]}_{cleaned_url}.json'
-    with open(filenameraw, 'w') as f:
-        json.dump(json_data, f, indent=4)
-        
+    try:
+        with open(filenameraw, 'w', encoding='utf-8') as f:
+            json.dump(json_data, f, indent=4, ensure_ascii=False)
+        print(f"Raw JSON data saved to {filenameraw}", flush=True)
+    except IOError as e:
+        print(f"Error saving raw JSON data to {filenameraw}: {e}", flush=True)
 
-    # Handle the exception, maybe skip this entry or log the error
     try:
         sku = json_data['props']['pageProps']['product']['sku']
         name = json_data['props']['pageProps']['product']['name']
@@ -53,52 +64,59 @@ def scrape(input_info):
         characteristics = json_data['props']['pageProps']['product']['characteristics']
 
         taxonomy = get_category(sku)
-        if input_info[1] :
+        if input_info[1]:
             category = input_info[1]
             sub_cat = taxonomy[0]
-        else :
+        else:
             category = taxonomy[0]
             sub_cat = taxonomy[1]
         description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
         image_links = json_data['props']['pageProps']['product']['media']
         descr_list_, modelo = procces_characteristics(characteristics)
 
+        feature_to_create_pdf = {
+            "name": name,
+            "image_links": image_links,
+            "description": description,
+            "descr_list": descr_list_,
+            "sub_cat": sub_cat.upper() if sub_cat else "OTROS",
+            "marca": marca,
+            "modelo": modelo,
+            "sku": sku,
+            "category": category,
+            "pos": url
+        }
+
+        filenameclean = f'{main_folder}/clean/{input_info[1]}_{cleaned_url}.json'
+        print(f"Saving cleaned data to {filenameclean}", flush=True)
+        with open(filenameclean, 'w', encoding='utf-8') as f:
+            json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
+        print(f"Cleaned data saved to {filenameclean}", flush=True)
+
     except KeyError as e:
         print(f"PARSING ALERT: {e} - at {url}")
-    feature_to_create_pdf = {
-        "name": name,
-        "image_links": image_links,
-        "description": description,
-        "descr_list": descr_list_,
-        "sub_cat": sub_cat.upper() if sub_cat else "OTROS",
-        "marca": marca,
-        "modelo": modelo,
-        "sku": sku,
-        "category": category,
-        "pos": url
-    }
+        return None
 
-    filenameclean = f'{main_folder}/clean/{input_info[1]}_{cleaned_url}.json'
-    print(f"Data saved to {filenameclean}", flush=True)
-    with open(filenameclean, 'w', encoding='utf-8') as f:
-        json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
-    
     print(f"Scraping images for {sku}", flush=True)
     Imageslocations = get_images_from_image_list_concurrently(image_links[:4], sku)
+    print(f"Images scraped and saved: {Imageslocations}", flush=True)
+
     sh = get_sheet()
     i = input_info[3]
     values_to_update = [
-    feature_to_create_pdf['name'],
-    feature_to_create_pdf['description'],
-    feature_to_create_pdf['marca'],
-    feature_to_create_pdf['sku'],
-    feature_to_create_pdf['pos'],
-    feature_to_create_pdf['category'],
-    str(feature_to_create_pdf['image_links'])
+        feature_to_create_pdf['name'],
+        feature_to_create_pdf['description'],
+        feature_to_create_pdf['marca'],
+        feature_to_create_pdf['sku'],
+        feature_to_create_pdf['pos'],
+        feature_to_create_pdf['category'],
+        str(feature_to_create_pdf['image_links'])
     ]
 
     # Update the entire row at once
     sh[3].update_row(i+2, values_to_update)
+    print(f"Google Sheet updated for {sku}", flush=True)
+
     return feature_to_create_pdf
 
 def safe_scrape(input_info):
@@ -124,6 +142,7 @@ def safe_scrape(input_info):
         return None
 
 def collector():
+    create_output_folders()
     # Setup folders
     setup_folders()
 
