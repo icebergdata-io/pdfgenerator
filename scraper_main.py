@@ -31,7 +31,7 @@ def scrape(input_info):
         print(f"Successfully retrieved content from {url}", flush=True)
     except requests.exceptions.RequestException as e:
         print(f"Error scraping {url}: {e}", flush=True)
-        return None
+        raise
 
     try:
         with open(f'{main_folder}/html/{cleaned_url}.html', 'w', encoding='utf-8') as f:

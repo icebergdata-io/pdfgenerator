@@ -1,3 +1,4 @@
+#%%
 import os
 import re
 import glob
@@ -94,11 +95,7 @@ def compile_pdf(layout='horizontal'):
     print(f"Generated {len(saved_images)} images")
 
     # Combine the saved images into a PDF
-    if layout == 'vertical':
-        pdf = FPDF('P', 'pt', (720, 1280))  # Portrait mode for vertical layout
-    else:
-        pdf = FPDF('L', 'pt', (1280, 720))
-        
+    pdf = FPDF('L', 'pt', (720, 1280))  # Correct dimensions for landscape mode
     for image_path in saved_images:
         if os.path.exists(image_path):
             pdf.add_page()
@@ -148,4 +145,5 @@ def compile_pdf(layout='horizontal'):
     sh[1].update_value('C16', signed_url)
 
 if __name__ == "__main__":
-    compile_pdf()
+    compile_pdf("vertical")
+# %%
