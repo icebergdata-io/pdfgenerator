@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libxslt-dev \
     && apt-get clean \
-    # poppler-utils \
-    # tesseract-ocr \
-    # libtesseract-dev \
+    poppler-utils \
+    tesseract-ocr \
+    libtesseract-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container

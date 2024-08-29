@@ -18,6 +18,7 @@ from aux_context import get_sheet
 from google.cloud import storage
 from datetime import timedelta
 from aux_gcloud import generate_signed_url
+from pdf_ocr import add_ocr_layer
 
 # Load environment variables
 load_dotenv()
@@ -132,7 +133,9 @@ def compile_pdf(layout='horizontal'):
     # ... Debugging code end ...
 
     # Upload the PDF to Google Cloud Storage
-    pdf_to_gcloud_bucket(pdf_path)
+
+    pdf_path_OCR = add_ocr_layer(pdf_path)
+    pdf_to_gcloud_bucket(pdf_path_OCR)
 
     # Example usage
     bucket_name = 'pdfgeneratorcoppel'
@@ -143,6 +146,8 @@ def compile_pdf(layout='horizontal'):
     print(f"Downloadable link: {signed_url}")
     sh=get_sheet()
     sh[1].update_value('C16', signed_url)
+
+    return signed_url
 
 if __name__ == "__main__":
     compile_pdf("vertical")

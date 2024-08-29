@@ -3,10 +3,11 @@ from pdf2image import convert_from_path
 from PyPDF2 import PdfWriter, PdfReader
 import io
 from PIL import Image
+import os 
 
 POPPLER_PATH = "/opt/homebrew/Cellar/poppler/24.04.0_1/bin"
 
-def add_ocr_layer(input_pdf, output_pdf):
+def add_ocr_layer(input_pdf):
     # Convert PDF to list of images
     images = convert_from_path(input_pdf, poppler_path=POPPLER_PATH)
 
@@ -38,12 +39,18 @@ def add_ocr_layer(input_pdf, output_pdf):
 
         pdf_writer.add_page(page)
 
+    #rename old file
+    input_pdf_new_name = input_pdf.replace(".pdf", "_non_ocr.pdf")
+    os.rename(input_pdf, input_pdf_new_name)
+
     # Save the result
-    with open(output_pdf, 'wb') as f:
+    with open(input_pdf, 'wb') as f:
         pdf_writer.write(f)
+        
+    return input_pdf
+
 
 if __name__ == "__main__":
-    input_pdf = 'output/pdfs/STARHAUS_2024-08-20_19:57:40_daniel.santamaria@iceberg-data.com.pdf'
-    output_pdf = 'output/product_catalog_searchable.pdf'
-    add_ocr_layer(input_pdf, output_pdf)
+    input_pdf = 'output/pdfs/STARHAUS_2024-08-23_19:36:03_miguel.maciel.beltran@gmail.com.pdf'
+    output_pdf = add_ocr_layer(input_pdf)
     print(f"Created searchable PDF: {output_pdf}")
