@@ -50,7 +50,7 @@ def add_ocr_layer(input_pdf):
     return input_pdf
 
 
-if __name__ == "__main__":
-    input_pdf = 'output/pdfs/STARHAUS_2024-08-23_19:36:03_miguel.maciel.beltran@gmail.com.pdf'
-    output_pdf = add_ocr_layer(input_pdf)
-    print(f"Created searchable PDF: {output_pdf}")
+# if __name__ == "__main__":
+#     input_pdf = 'output/pdfs/STARHAUS_2024-08-23_19:36:03_miguel.maciel.beltran@gmail.com.pdf'
+#     output_pdf = add_ocr_layer(input_pdf)
+#     print(f"Created searchable PDF: {output_pdf}")
