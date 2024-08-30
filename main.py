@@ -73,13 +73,11 @@ async def generate_pdf():
     
     # Get the signed URL from the Google Sheet
     signed_url = sh[1].get_value('C16')
-    
-    #TODO OCR integration and make sure it takes a few seconds
 
     
     return {"url": signed_url}
 
 if __name__ == "__main__":
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = os.environ.get("HOST", " ")
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host=host, port=port)

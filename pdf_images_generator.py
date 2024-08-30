@@ -10,6 +10,7 @@ from aux_pdf import draw_text, draw_features, draw_product_images,left_margin
 
 # Function to render a single product on the template
 def render_page_single(combined_img, product_data, image_files, x_offset_input):
+    
     drawer = ImageDraw.Draw(combined_img)
 
     # Extracting data from product JSON
@@ -49,7 +50,7 @@ def render_page_single(combined_img, product_data, image_files, x_offset_input):
 
     # Draw features
     draw_text(drawer, 'Características del producto', (left_margin + x_offset, 400), font_bold_medium, (104, 166, 225))
-    draw_features(drawer, product_data['descr_list'][:10], left_margin + x_offset, 430, font_regular, 5, x_offset)
+    draw_features(drawer, product_data.get('descr_list', [])[:8], left_margin + x_offset, 430, font_regular, 20, x_offset)
 
     # New: Handle description with dynamic font size
     draw_text(drawer, 'Descripción de producto', (left_margin + x_offset, 550), font_bold_medium, (104, 166, 225))

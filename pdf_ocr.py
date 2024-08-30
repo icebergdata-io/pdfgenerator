@@ -3,12 +3,29 @@ from pdf2image import convert_from_path
 from PyPDF2 import PdfWriter, PdfReader
 import io
 from PIL import Image
+import os 
+import subprocess
 
-POPPLER_PATH = "/opt/homebrew/Cellar/poppler/24.04.0_1/bin"
+def add_ocr_layer(input_pdf):
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Contents of current directory: {os.listdir('.')}")
+    print(f"PATH: {os.environ.get('PATH')}")
+    
+    try:
+        # Check if poppler is installed
+        subprocess.run(["pdftoppm", "-v"], check=True, capture_output=True)
+        print("Poppler is installed and accessible")
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking Poppler: {e}")
+        print(f"Poppler output: {e.output}")
+    except FileNotFoundError:
+        print("Poppler (pdftoppm) not found in PATH")
 
-def add_ocr_layer(input_pdf, output_pdf):
-    # Convert PDF to list of images
-    images = convert_from_path(input_pdf, poppler_path=POPPLER_PATH)
+    try:
+        images = convert_from_path(input_pdf)
+        print(f"Successfully converted PDF to {len(images)} images")
+    except Exception as e:
+        print(f"Error converting PDF to images: {e}")
 
     pdf_writer = PdfWriter()
 
@@ -38,12 +55,18 @@ def add_ocr_layer(input_pdf, output_pdf):
 
         pdf_writer.add_page(page)
 
-    # Save the result
-    with open(output_pdf, 'wb') as f:
-        pdf_writer.write(f)
+    #rename old file
+    input_pdf_new_name = input_pdf.replace(".pdf", "_non_ocr.pdf")
+    os.rename(input_pdf, input_pdf_new_name)
 
-if __name__ == "__main__":
-    input_pdf = 'output/pdfs/STARHAUS_2024-08-20_19:57:40_daniel.santamaria@iceberg-data.com.pdf'
-    output_pdf = 'output/product_catalog_searchable.pdf'
-    add_ocr_layer(input_pdf, output_pdf)
-    print(f"Created searchable PDF: {output_pdf}")
+    # Save the result
+    with open(input_pdf, 'wb') as f:
+        pdf_writer.write(f)
+        
+    return input_pdf
+
+
+# if __name__ == "__main__":
+#     input_pdf = 'output/pdfs/STARHAUS_2024-08-23_19:36:03_miguel.maciel.beltran@gmail.com.pdf'
+#     output_pdf = add_ocr_layer(input_pdf)
+#     print(f"Created searchable PDF: {output_pdf}")

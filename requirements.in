@@ -9,9 +9,9 @@ lxml
 pillow-avif-plugin
 retry
 FPDF
-# pytesseract
-# pdf2image
-# PyPDF2
+pytesseract
+pdf2image
+PyPDF2
 python-dotenv
 google-cloud-storage
 pytz

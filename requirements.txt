@@ -99,10 +99,17 @@ numpy==2.1.0
     # via pandas
 oauthlib==3.2.2
     # via requests-oauthlib
+packaging==24.1
+    # via pytesseract
 pandas==2.2.2
     # via -r requirements.in
-pillow==10.4.0
+pdf2image==1.17.0
     # via -r requirements.in
+pillow==10.4.0
+    # via
+    #   -r requirements.in
+    #   pdf2image
+    #   pytesseract
 pillow-avif-plugin==1.4.6
     # via -r requirements.in
 proto-plus==1.24.0
@@ -133,6 +140,10 @@ pygsheets==2.0.6
     # via -r requirements.in
 pyparsing==3.1.4
     # via httplib2
+pypdf2==3.0.1
+    # via -r requirements.in
+pytesseract==0.3.13
+    # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1
