@@ -5,27 +5,19 @@ import io
 from PIL import Image
 import os 
 import subprocess
+from pf_margin import add_margins
 
 def add_ocr_layer(input_pdf):
     print(f"Current working directory: {os.getcwd()}")
     print(f"Contents of current directory: {os.listdir('.')}")
     print(f"PATH: {os.environ.get('PATH')}")
     
-    try:
-        # Check if poppler is installed
-        subprocess.run(["pdftoppm", "-v"], check=True, capture_output=True)
-        print("Poppler is installed and accessible")
-    except subprocess.CalledProcessError as e:
-        print(f"Error checking Poppler: {e}")
-        print(f"Poppler output: {e.output}")
-    except FileNotFoundError:
-        print("Poppler (pdftoppm) not found in PATH")
+    subprocess.run(["pdftoppm", "-v"], check=True, capture_output=True)
+    print("Poppler is installed and accessible")
 
-    try:
-        images = convert_from_path(input_pdf)
-        print(f"Successfully converted PDF to {len(images)} images")
-    except Exception as e:
-        print(f"Error converting PDF to images: {e}")
+    images = convert_from_path(input_pdf)
+    print(f"Successfully converted PDF to {len(images)} images")
+
 
     pdf_writer = PdfWriter()
 
@@ -62,11 +54,14 @@ def add_ocr_layer(input_pdf):
     # Save the result
     with open(input_pdf, 'wb') as f:
         pdf_writer.write(f)
-        
+
+    #add margin
+    add_margins(input_pdf, input_pdf, 100)
+
     return input_pdf
 
 
-# if __name__ == "__main__":
-#     input_pdf = 'output/pdfs/STARHAUS_2024-08-23_19:36:03_miguel.maciel.beltran@gmail.com.pdf'
-#     output_pdf = add_ocr_layer(input_pdf)
-#     print(f"Created searchable PDF: {output_pdf}")
+if __name__ == "__main__":
+    input_pdf = 'output/pdfs/DSA_2024-08-30_09-27-40___non_ocr.pdf'
+    output_pdf = add_ocr_layer(input_pdf)
+    print(f"Created searchable PDF: {output_pdf}")

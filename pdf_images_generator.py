@@ -24,7 +24,8 @@ def render_page_single(combined_img, product_data, image_files, x_offset_input):
 
     # Prepare text and descriptions for rendering
     brand_model = f'Marca: {brand} | Modelo: {model}' if model and brand else f'Modelo: {model}' if model else f'Marca: {brand}'
-    product_name = wrap(product_name, 100)[0]
+    product_name = wrap(product_name, 50)
+    product_name = '\n'.join(product_name)
 
     # Define fonts for rendering text
     font_bold = ImageFont.truetype('Calibri Bold.ttf', 27)
@@ -130,14 +131,19 @@ def render_product_vertical(drawer, combined_img, product_data, image_files, y_o
     # Draw product images
     draw_product_images_vertical(combined_img, image_files, current_y, left_margin)
 
+    #wrapper for product name
+    product_name = wrap(product_name, 50)
+    product_name = '\n'.join(product_name)
+
+
     # Draw product name
-    drawer.text((right_column_start, current_y), product_name, font=font_bold_medium, fill=color_blue)
+    drawer.text((right_column_start-100, current_y+5), product_name, font=font_bold_medium, fill=color_blue)
     current_y += 30
 
     # Draw product description
     description_lines = wrap(product_description, 70)
-    description_text = '\n'.join(description_lines[:6])  # Limit to 3 lines
-    drawer.text((right_column_start, current_y), description_text, font=font_regular, fill=color_gray)
+    description_text = '\n'.join(description_lines[:10])   
+    drawer.text((right_column_start-100, current_y+25), description_text, font=font_regular, fill=color_gray)
     current_y -= 30
     
     # Draw specifications
@@ -146,7 +152,7 @@ def render_product_vertical(drawer, combined_img, product_data, image_files, y_o
         feature_text = f"- {feature.get('name', '')}: {feature.get('value', '')}"
         wrapped_lines = wrap(feature_text, width=60) 
         for line in wrapped_lines:
-            drawer.text((right_column_start + 485, spec_y), line, font=font_regular, fill=color_gray)
+            drawer.text((right_column_start + 525, spec_y), line, font=font_regular, fill=color_gray)
             spec_y += 20 
             
     # Draw SKU above the gray block

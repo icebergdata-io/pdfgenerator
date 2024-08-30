@@ -49,6 +49,7 @@ async def generate_pdf():
     print("Starting the process")
     # Run the scraper
     results = collector()
+    # results = None
     print("Results collected")
     sh[1].update_value('E10', "Compiling PDF")
     layout = sh[1].get_value('E13')
@@ -78,6 +79,6 @@ async def generate_pdf():
     return {"url": signed_url}
 
 if __name__ == "__main__":
-    host = os.environ.get("HOST", " ")
-    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST" , "0.0.0.0")
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host=host, port=port)
