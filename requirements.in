@@ -19,3 +19,4 @@ Pillow
 google-auth-httplib2
 google-cloud-secret-manager
 jinja2
+reportlab

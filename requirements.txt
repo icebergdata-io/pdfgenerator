@@ -16,6 +16,8 @@ cachetools==5.5.0
     # via google-auth
 certifi==2024.7.4
     # via requests
+chardet==5.2.0
+    # via reportlab
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -110,6 +112,7 @@ pillow==10.4.0
     #   -r requirements.in
     #   pdf2image
     #   pytesseract
+    #   reportlab
 pillow-avif-plugin==1.4.6
     # via -r requirements.in
 proto-plus==1.24.0
@@ -152,6 +155,8 @@ pytz==2024.1
     # via
     #   -r requirements.in
     #   pandas
+reportlab==4.2.2
+    # via -r requirements.in
 requests==2.32.3
     # via
     #   google-api-core
