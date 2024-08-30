@@ -4,12 +4,28 @@ from PyPDF2 import PdfWriter, PdfReader
 import io
 from PIL import Image
 import os 
-
-POPPLER_PATH = "/opt/homebrew/Cellar/poppler/24.04.0_1/bin"
+import subprocess
 
 def add_ocr_layer(input_pdf):
-    # Convert PDF to list of images
-    images = convert_from_path(input_pdf, poppler_path=POPPLER_PATH)
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Contents of current directory: {os.listdir('.')}")
+    print(f"PATH: {os.environ.get('PATH')}")
+    
+    try:
+        # Check if poppler is installed
+        subprocess.run(["pdftoppm", "-v"], check=True, capture_output=True)
+        print("Poppler is installed and accessible")
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking Poppler: {e}")
+        print(f"Poppler output: {e.output}")
+    except FileNotFoundError:
+        print("Poppler (pdftoppm) not found in PATH")
+
+    try:
+        images = convert_from_path(input_pdf)
+        print(f"Successfully converted PDF to {len(images)} images")
+    except Exception as e:
+        print(f"Error converting PDF to images: {e}")
 
     pdf_writer = PdfWriter()
 

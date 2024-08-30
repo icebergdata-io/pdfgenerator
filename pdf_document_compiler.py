@@ -151,4 +151,3 @@ def compile_pdf(layout='horizontal'):
 
 if __name__ == "__main__":
     compile_pdf("vertical")
-# %%

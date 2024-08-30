@@ -28,18 +28,34 @@ def load_product_data_and_images(json_file, image_folder):
     return product_data, image_files
 
 # Function to draw product features
-def draw_features(drawer, features, x_position, y_position, font, max_features_per_column, x_offset):
-    for idx, feature in enumerate(features):
+def draw_features(drawer, features, x_position, y_position, font, line_height, x_offset):
+    max_lines_per_column = 6  # Define el máximo de líneas por columna
+    lines_in_current_column = 0  # Cuenta las líneas en la columna actual
+
+    for feature in features:
         feature_name = feature.get('name', '')
         feature_value = feature.get('value', '')
-        feature_text = f"{feature_name}: {feature_value}"
+        feature_text = f"- {feature_name}: {feature_value}"
         
-        if idx == max_features_per_column:
-            x_position += 300  # Move to the second column
-            y_position = 430   # Reset y position for the second column
-
-        draw_text(drawer, feature_text, (x_position, y_position), font, (51, 51, 51))
-        y_position += 20
+        # Wrap text to fit within a certain width
+        wrapped_lines = wrap(feature_text, width=30)
+        
+        # If the number of lines exceeds the max per column, move to the next column
+        if lines_in_current_column + len(wrapped_lines) > max_lines_per_column:
+            x_position += 300  # Move to the next column
+            y_position = 430   # Reset y position for the new column
+            lines_in_current_column = 0  # Reset line count for the new column
+        
+        # Draw each line of wrapped text
+        for line in wrapped_lines:
+            draw_text(drawer, line, (x_position, y_position), font, (51, 51, 51))
+            y_position += line_height  # Move down for the next line
+            lines_in_current_column += 1  # Increment the line count
+        
+        # Add extra space between features
+        if len(wrapped_lines) > 1:
+            y_position += 10  # Additional space after wrapped lines
+            lines_in_current_column += 1  # Count the extra space as a line
 
 # Function to draw product images on the image
 def draw_product_images(img, image_files, y_offset, x_offset, is_vertical=False):
