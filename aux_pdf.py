@@ -30,7 +30,9 @@ def load_product_data_and_images(json_file, image_folder):
 # Function to draw product features
 def draw_features(drawer, features, x_position, y_position, font, line_height, x_offset):
     max_lines_per_column = 6  # Define el máximo de líneas por columna
+    max_columns = 2  # Limitar a 2 columnas
     lines_in_current_column = 0  # Cuenta las líneas en la columna actual
+    current_column = 1  # Inicia en la primera columna
 
     for feature in features:
         feature_name = feature.get('name', '')
@@ -40,12 +42,16 @@ def draw_features(drawer, features, x_position, y_position, font, line_height, x
         # Wrap text to fit within a certain width
         wrapped_lines = wrap(feature_text, width=30)
         
-        # If the number of lines exceeds the max per column, move to the next column
+        # If the number of lines exceeds the max per column and there is room for a new column
         if lines_in_current_column + len(wrapped_lines) > max_lines_per_column:
-            x_position += 300  # Move to the next column
-            y_position = 430   # Reset y position for the new column
-            lines_in_current_column = 0  # Reset line count for the new column
-        
+            if current_column < max_columns:  # Move to the next column if there is room
+                x_position += 300  # Move to the next column
+                y_position = 430   # Reset y position for the new column
+                lines_in_current_column = 0  # Reset line count for the new column
+                current_column += 1
+            else:
+                break  # Stop if max columns are reached
+
         # Draw each line of wrapped text
         for line in wrapped_lines:
             draw_text(drawer, line, (x_position, y_position), font, (51, 51, 51))
