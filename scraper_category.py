@@ -27,8 +27,8 @@ def get_category(skuid):
 
     params = {
         'operationName': 'GetSearchResults',
-        'variables': '{"pageNumber":"1","pageSize":"1","orderBy":"0","filter":[],"searchTerm":"SKUID"}'.replace("SKUID", skuid),
-        'extensions': '{"persistedQuery":{"version":1,"sha256Hash":"36b74145d9ea77bb5f1965bd295a4d00fa9e92abd97013c64a0bb0ca9f047796"}}',
+        'variables': '{"pageNumber":"1","pageSize":"1","orderBy":"0","filter":[],"searchTerm":"SKUID"}'.replace("SKUID", str(skuid)),
+        'extensions': '{"persistedQuery":{"version":1,"sha256Hash":"688ca29fde750ccd49c5a108718a636d69b8aa2d453b5422aba045b4ab404d37"}}',
     }
 
     response = requests.get('https://www.coppel.com/graphql'
@@ -48,3 +48,9 @@ def get_category(skuid):
     taxanomy = [principal_category, secondary_category]
 
     return taxanomy
+
+skuid = 2050533
+
+if __name__ == '__main__':
+    taxanomy = get_category(skuid)
+    print(taxanomy)

@@ -21,7 +21,7 @@ def get_images_from_image_list(image_url, sku):
         response = request_image(image_url, timeout)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f"Failed to download {image_url}: {e}")
+        print(f"Failed to download image from {image_url}: {e}")
         return None
     
     # Create folder to save images
@@ -45,7 +45,7 @@ def safe_get_images_from_image_list(image_url, sku):
     try:
         return get_images_from_image_list(image_url, sku)
     except Exception as e:
-        print(f"Error scraping {image_url}: {e}")
+        print(f"Error scraping images{image_url}: {e}")
         #create blank image in case of error
         main_folder = os.getenv('OUTPUT_FOLDER')
         image_folder = os.path.join(main_folder, 'images', sku)

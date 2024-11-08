@@ -10,100 +10,129 @@ from scraper_images import get_images_from_image_list_concurrently
 from aux_scraper import headersX, get_proxy_new
 from aux_parse import clean_html, procces_characteristics
 from utils import create_output_folders
-
-#load .env file
 from dotenv import load_dotenv
+from retry import retry
+from typing import Optional, Dict, Any
+
 load_dotenv()
 
-from retry import retry
-
-@retry(3)
-def scrape(input_info):
-    main_folder = os.getenv('OUTPUT_FOLDER')
-    """Function to scrape the given URL and process data."""
-    url = input_info[0]
-    cleaned_url = url.replace('https://www.coppel.com', '').replace('/', '_').replace('?', '_').replace('=', '_').replace('&', '_').replace('%', '_').replace(':', '_')
-
-    try:
-        print(f"Scraping {url}", flush=True)
-        response = requests.get(url=url, headers=headersX, proxies=get_proxy_new(), timeout=30)
-        response.raise_for_status()
-        print(f"Successfully retrieved content from {url}", flush=True)
-    except requests.exceptions.RequestException as e:
-        print(f"Error scraping {url}: {e}", flush=True)
-        raise
-
-    try:
-        with open(f'{main_folder}/html/{cleaned_url}.html', 'w', encoding='utf-8') as f:
-            f.write(response.text)
-        print(f"HTML content saved to {main_folder}/html/{cleaned_url}.html", flush=True)
-    except IOError as e:
-        print(f"Error saving HTML content: {e}", flush=True)
-
-    try:
-        print(f"Parsing {url}", flush=True)
-        soup = BeautifulSoup(response.text, 'lxml')
-        json_data = json.loads(soup.find('script', {"id": "__NEXT_DATA__"}).text)
-        print(f"Successfully parsed JSON data from {url}", flush=True)
-    except (AttributeError, json.JSONDecodeError) as e:
-        print(f"Error parsing JSON data from {url}: {e}", flush=True)
-        return None
-
-    filenameraw = f'{main_folder}/raw/{input_info[1]}_{cleaned_url}.json'
-    try:
-        with open(filenameraw, 'w', encoding='utf-8') as f:
-            json.dump(json_data, f, indent=4, ensure_ascii=False)
-        print(f"Raw JSON data saved to {filenameraw}", flush=True)
-    except IOError as e:
-        print(f"Error saving raw JSON data to {filenameraw}: {e}", flush=True)
-
-    try:
-        sku = json_data['props']['pageProps']['product']['sku']
-        name = json_data['props']['pageProps']['product']['name']
-        marca = json_data['props']['pageProps']['product']['brand']
-        characteristics = json_data['props']['pageProps']['product']['characteristics']
-
-        taxonomy = get_category(sku)
-        if input_info[1]:
-            category = input_info[1]
-            sub_cat = taxonomy[0]
+def save_to_file(content: Any, filepath: str, is_json: bool = False) -> None:
+    """Save content to a file, handling both JSON and text formats."""
+    mode = 'w' if is_json else 'wb'
+    with open(filepath, mode, encoding='utf-8' if is_json else None) as f:
+        if is_json:
+            json.dump(content, f, indent=4, ensure_ascii=False)
         else:
-            category = taxonomy[0]
-            sub_cat = taxonomy[1]
-        description = clean_html(json_data['props']['pageProps']['product'].get('longDescription') or json_data['props']['pageProps']['product'].get('shortDescription'))
-        image_links = json_data['props']['pageProps']['product']['media']
-        descr_list_, modelo = procces_characteristics(characteristics)
+            f.write(content)
 
-        feature_to_create_pdf = {
-            "name": name,
-            "image_links": image_links,
-            "description": description,
-            "descr_list": descr_list_,
-            "sub_cat": sub_cat.upper() if sub_cat else "OTROS",
-            "marca": marca,
-            "modelo": modelo,
-            "sku": sku,
-            "category": category,
-            "pos": url
-        }
+def update_sheet_row(sh, index: int, values: list) -> None:
+    """Update a row in the Google Sheet."""
+    sh[3].update_row(index + 2, values)
 
-        filenameclean = f'{main_folder}/clean/{input_info[1]}_{cleaned_url}.json'
-        print(f"Saving cleaned data to {filenameclean}", flush=True)
-        with open(filenameclean, 'w', encoding='utf-8') as f:
-            json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
-        print(f"Cleaned data saved to {filenameclean}", flush=True)
+def extract_product_data(json_data: Dict) -> Dict[str, Any]:
+    """Extract relevant product data from JSON response."""
+    product = json_data['props']['pageProps']['product']
+    
+    # Extract basic product information
+    sku = product['sku']
+    name = product['name']
+    marca = product['brand']
+    characteristics = product['characteristics']
+    
+    # Get product description
+    description = clean_html(
+        product.get('longDescription') or 
+        product.get('shortDescription', '')
+    )
+    
+    # Process characteristics and get model
+    descr_list, modelo = procces_characteristics(characteristics)
+    
+    # Get image links
+    image_links = product['media']
+    
+    return {
+        "sku": sku,
+        "name": name,
+        "marca": marca,
+        "description": description,
+        "image_links": image_links,
+        "descr_list": descr_list,
+        "modelo": modelo
+    }
 
-    except KeyError as e:
-        print(f"PARSING ALERT: {e} - at {url}")
-        return None
-
-    print(f"Scraping images for {sku}", flush=True)
-    Imageslocations = get_images_from_image_list_concurrently(image_links[:4], sku)
-    print(f"Images scraped and saved: {Imageslocations}", flush=True)
-
+@retry(tries=3)
+def scrape(input_info: tuple) -> Optional[Dict]:
+    """
+    Scrape product information from a given URL.
+    
+    Args:
+        input_info: Tuple containing (url, category, subcategory, index)
+    
+    Returns:
+        Dictionary containing product information or None if scraping fails
+    """
+    url, category, subcategory, index = input_info
+    main_folder = os.getenv('OUTPUT_FOLDER')
+    cleaned_url = url.replace('https://www.coppel.com', '').replace('/', '_').strip('_')
+    
+    # Fetch and save HTML content
+    response = requests.get(
+        url=url,
+        headers=headersX,
+        proxies=get_proxy_new(),
+        timeout=30
+    )
+    response.raise_for_status()
+    
+    # Save raw HTML
+    html_path = f'{main_folder}/html/{cleaned_url}.html'
+    save_to_file(response.text, html_path, is_json=True)
+    
+    # Parse HTML and extract JSON data
+    soup = BeautifulSoup(response.text, 'lxml')
+    json_data = json.loads(soup.find('script', {"id": "__NEXT_DATA__"}).text)
+    
+    # Save raw JSON
+    raw_json_path = f'{main_folder}/raw/{category}_{cleaned_url}.json'
+    save_to_file(json_data, raw_json_path, is_json=True)
+    
+    # Extract product data
+    product_data = extract_product_data(json_data)
+    sku = str(product_data['sku'])
+    
+    # Get category information
+    taxonomy = get_category(sku) or ["ERROR", "OTROS"]
+    
+    # Determine category and subcategory
+    if category:
+        final_category = category
+        final_subcategory = taxonomy[0]
+    else:
+        final_category = taxonomy[0]
+        final_subcategory = taxonomy[1]
+    
+    # Construct final product data
+    feature_to_create_pdf = {
+        **product_data,
+        "sub_cat": final_subcategory.upper() if final_subcategory else "OTROS",
+        "category": final_category,
+        "pos": url
+    }
+    
+    # Save cleaned data
+    clean_json_path = f'{main_folder}/clean/{category}_{cleaned_url}.json'
+    save_to_file(feature_to_create_pdf, clean_json_path, is_json=True)
+    
+    # Download and save images
+    image_locations = get_images_from_image_list_concurrently(
+        product_data['image_links'][:4], 
+        sku
+    )
+    
+    # Update Google Sheet
     sh = get_sheet()
-    i = input_info[3]
-    values_to_update = [
+    sheet_values = [
         feature_to_create_pdf['name'],
         feature_to_create_pdf['description'],
         feature_to_create_pdf['marca'],
@@ -112,58 +141,39 @@ def scrape(input_info):
         feature_to_create_pdf['category'],
         str(feature_to_create_pdf['image_links'])
     ]
-
-    # Update the entire row at once
-    sh[3].update_row(i+2, values_to_update)
-    print(f"Google Sheet updated for {sku}", flush=True)
-
+    update_sheet_row(sh, index, sheet_values)
+    
     return feature_to_create_pdf
 
-def safe_scrape(input_info):
+def safe_scrape(input_info: tuple) -> Optional[Dict]:
+    """Wrapper function to handle scraping errors safely."""
     try:
         return scrape(input_info)
     except Exception as e:
         print(f"Error scraping {input_info[0]}: {e}")
-
         sh = get_sheet()
-        i = input_info[3]
-        values_to_update = [
-        "error",
-        "error",
-        "error",
-        "error",
-        input_info[0],
-        "error",
-        "error",
-        ]
-        sh = get_sheet()
-        # Update the entire row at once
-        sh[3].update_row(i+2, values_to_update)
+        error_values = ["error"] * 6 + [input_info[0]]
+        update_sheet_row(sh, input_info[3], error_values)
         return None
 
-def collector():
+def collector() -> list:
+    """Main function to coordinate the scraping process."""
+    # Setup environment
     create_output_folders()
-    # Setup folders
     setup_folders()
-
-    # Get the Google Sheet Data
+    
+    # Initialize sheet and clear old data
     sh = get_sheet()
-
-    #delete content below headers
     sh[3].clear(start='A2', end='G1000')
-
-    input_info_block = read_inputs(sh)
-    #add index to input_info_block
-    for i, item in enumerate(input_info_block):
-        item.append(i)
-
-    # Use multiprocessing to scrape data
+    
+    # Get input data and add indices
+    input_info_block = [(*item, i) for i, item in enumerate(read_inputs(sh))]
+    
+    # Run parallel scraping
     with ProcessPoolExecutor(max_workers=5) as executor:
-        results = executor.map(safe_scrape, input_info_block)
-
-    resolved_results = list(results)
-    return resolved_results
-
+        results = list(executor.map(safe_scrape, input_info_block))
+    
+    return results
 
 if __name__ == '__main__':
     collector()
