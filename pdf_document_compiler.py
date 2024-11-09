@@ -19,6 +19,7 @@ from google.cloud import storage
 from datetime import timedelta
 from aux_gcloud import generate_signed_url
 from pdf_ocr import add_ocr_layer
+import shutil  # Añadido el import de shutil
 
 # Load environment variables
 load_dotenv()
@@ -59,25 +60,18 @@ def sanitize_filename(filename):
 
 def compile_pdf(layout='horizontal'):
     print("Compiling PDF...")
-    # Define paths
     json_folder = 'output/clean'
     image_folder = 'output/images'
     template_path = 'Template 2 colors.png' if 'horizontal' in layout.lower() else 'Template 2_2.png'
     
-    # Create output folders if they don't exist
     os.makedirs('output/pages', exist_ok=True)
     os.makedirs('output/pdfs', exist_ok=True)
 
-    # Load all product JSON files
+    # Load and sort JSON files
     json_files = sorted(glob.glob(f'{json_folder}/*.json'))
-    
-    # ... Debugging code ...
-
     print(f"Found {len(json_files)} JSON files")
 
-    # ... Debugging code ...
-
-    # Use ProcessPoolExecutor to parallelize image rendering
+    # Generate PDF pages
     with ProcessPoolExecutor() as executor:
         futures = []
         for i in range(0, len(json_files), 2):
@@ -91,12 +85,11 @@ def compile_pdf(layout='horizontal'):
             else:
                 print("Warning: Empty result from process_page")
 
-    # Sort the saved images to ensure correct order
     saved_images.sort()
     print(f"Generated {len(saved_images)} images")
 
-    # Combine the saved images into a PDF
-    pdf = FPDF('L', 'pt', (720, 1280))  # Correct dimensions for landscape mode
+    # Generate base PDF
+    pdf = FPDF('L', 'pt', (720, 1280))
     for image_path in saved_images:
         if os.path.exists(image_path):
             pdf.add_page()
@@ -105,49 +98,48 @@ def compile_pdf(layout='horizontal'):
         else:
             print(f"Warning: Image not found: {image_path}")
 
+    # Generate filenames
     timezoneodmx = timezone('America/Mexico_City')
     date_string_now_cdmx = datetime.now(timezoneodmx).strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{os.getenv('FILENAMETOSAVE')}_{date_string_now_cdmx}_{os.getenv('USER')}.pdf"
-    filename = sanitize_filename(filename)
-    pdf_path = os.path.join('output', 'pdfs', filename)
-
-    # Before saving, check if the PDF has any pages
-    if pdf.page_no() == 0:
-        print("Error: PDF has no pages")
-    else:
-        print(f"PDF has {pdf.page_no()} pages")
-
-    # Save the final PDF
-    pdf.output(pdf_path)
-    print(f"PDF saved: {pdf_path}")
-
-    # Verify the saved PDF
-    if os.path.exists(pdf_path):
-        pdf_size = os.path.getsize(pdf_path)
-        print(f"PDF size: {pdf_size} bytes")
-        if pdf_size == 0:
-            print("Error: Saved PDF is empty")
-    else:
-        print(f"Error: Failed to save PDF {pdf_path}")
-
-    # ... Debugging code end ...
-
-    # Upload the PDF to Google Cloud Storage
-
-    pdf_path_OCR = add_ocr_layer(pdf_path)
-    pdf_to_gcloud_bucket(pdf_path_OCR)
-
-    # Example usage
+    base_filename = f"{os.getenv('FILENAMETOSAVE')}_{date_string_now_cdmx}_{os.getenv('USER')}"
+    base_filename = sanitize_filename(base_filename)
+    
+    # Save and process non-OCR version first
+    non_ocr_filename = f"{base_filename}_non_ocr.pdf"
+    non_ocr_path = os.path.join('output', 'pdfs', non_ocr_filename)
+    pdf.output(non_ocr_path)
+    
+    # Upload non-OCR version and get URL immediately
+    print("Uploading non-OCR version...")
+    pdf_to_gcloud_bucket(non_ocr_path)
     bucket_name = 'pdfgeneratorcoppel'
-    blob_name = filename
-    expiration_time = 90*24  # URL valid for 1 hour
+    expiration_time = 90*24
+    non_ocr_url = generate_signed_url(bucket_name, non_ocr_filename, expiration_time)
+    
+    # Update sheet with non-OCR URL immediately
+    sh = get_sheet()
+    sh[1].update_value('C16', non_ocr_url)
+    print("Non-OCR PDF URL updated in sheet")
 
-    signed_url = generate_signed_url(bucket_name, blob_name, expiration_time)
-    print(f"Downloadable link: {signed_url}")
-    sh=get_sheet()
-    sh[1].update_value('C16', signed_url)
+    # Start OCR process
+    print("Starting OCR process...")
+    ocr_filename = f"{base_filename}_ocr.pdf"
+    ocr_path = os.path.join('output', 'pdfs', ocr_filename)
+    shutil.copy2(non_ocr_path, ocr_path)
+    
+    # Update sheet to show OCR is in progress
+    sh[1].update_value('C17', "-------- procesando OCR -----")
+    
+    # Process OCR
+    ocr_path = add_ocr_layer(ocr_path)
+    pdf_to_gcloud_bucket(ocr_path)
+    ocr_url = generate_signed_url(bucket_name, ocr_filename, expiration_time)
+    
+    # Update sheet with OCR URL
+    sh[1].update_value('C17', ocr_url)
+    print("OCR PDF URL updated in sheet")
 
-    return signed_url
+    return non_ocr_url, ocr_url
 
 if __name__ == "__main__":
     compile_pdf("vertical")

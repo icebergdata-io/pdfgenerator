@@ -12,25 +12,12 @@ from aux_parse import clean_html, procces_characteristics
 from utils import create_output_folders
 from dotenv import load_dotenv
 from retry import retry
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 load_dotenv()
 
-def save_to_file(content: Any, filepath: str, is_json: bool = False) -> None:
-    """Save content to a file, handling both JSON and text formats."""
-    mode = 'w' if is_json else 'wb'
-    with open(filepath, mode, encoding='utf-8' if is_json else None) as f:
-        if is_json:
-            json.dump(content, f, indent=4, ensure_ascii=False)
-        else:
-            f.write(content)
-
-def update_sheet_row(sh, index: int, values: list) -> None:
-    """Update a row in the Google Sheet."""
-    sh[3].update_row(index + 2, values)
-
-def extract_product_data(json_data: Dict) -> Dict[str, Any]:
-    """Extract relevant product data from JSON response."""
+def extract_product_data(json_data: Dict, original_index: int) -> Dict[str, Any]:
+    """Extract relevant product data from JSON response, including original order index."""
     product = json_data['props']['pageProps']['product']
     
     # Extract basic product information
@@ -58,7 +45,8 @@ def extract_product_data(json_data: Dict) -> Dict[str, Any]:
         "description": description,
         "image_links": image_links,
         "descr_list": descr_list,
-        "modelo": modelo
+        "modelo": modelo,
+        "original_index": original_index  # Add original index to preserve order
     }
 
 @retry(tries=3)
@@ -76,7 +64,6 @@ def scrape(input_info: tuple) -> Optional[Dict]:
     main_folder = os.getenv('OUTPUT_FOLDER')
     cleaned_url = url.replace('https://www.coppel.com', '').replace('/', '_').strip('_')
     
-    # Fetch and save HTML content
     response = requests.get(
         url=url,
         headers=headersX,
@@ -85,26 +72,15 @@ def scrape(input_info: tuple) -> Optional[Dict]:
     )
     response.raise_for_status()
     
-    # Save raw HTML
-    html_path = f'{main_folder}/html/{cleaned_url}.html'
-    save_to_file(response.text, html_path, is_json=True)
-    
-    # Parse HTML and extract JSON data
     soup = BeautifulSoup(response.text, 'lxml')
     json_data = json.loads(soup.find('script', {"id": "__NEXT_DATA__"}).text)
     
-    # Save raw JSON
-    raw_json_path = f'{main_folder}/raw/{category}_{cleaned_url}.json'
-    save_to_file(json_data, raw_json_path, is_json=True)
-    
-    # Extract product data
-    product_data = extract_product_data(json_data)
+    # Extract product data with original index
+    product_data = extract_product_data(json_data, index)
     sku = str(product_data['sku'])
     
-    # Get category information
     taxonomy = get_category(sku) or ["ERROR", "OTROS"]
     
-    # Determine category and subcategory
     if category:
         final_category = category
         final_subcategory = taxonomy[0]
@@ -112,7 +88,6 @@ def scrape(input_info: tuple) -> Optional[Dict]:
         final_category = taxonomy[0]
         final_subcategory = taxonomy[1]
     
-    # Construct final product data
     feature_to_create_pdf = {
         **product_data,
         "sub_cat": final_subcategory.upper() if final_subcategory else "OTROS",
@@ -120,11 +95,12 @@ def scrape(input_info: tuple) -> Optional[Dict]:
         "pos": url
     }
     
-    # Save cleaned data
-    clean_json_path = f'{main_folder}/clean/{category}_{cleaned_url}.json'
-    save_to_file(feature_to_create_pdf, clean_json_path, is_json=True)
+    # Save the data with index in filename
+    clean_json_path = f'{main_folder}/clean/{index:03d}_{category}_{cleaned_url}.json'
+    with open(clean_json_path, 'w', encoding='utf-8') as f:
+        json.dump(feature_to_create_pdf, f, indent=4, ensure_ascii=False)
     
-    # Download and save images
+    # Download images
     image_locations = get_images_from_image_list_concurrently(
         product_data['image_links'][:4], 
         sku
@@ -141,12 +117,20 @@ def scrape(input_info: tuple) -> Optional[Dict]:
         feature_to_create_pdf['category'],
         str(feature_to_create_pdf['image_links'])
     ]
-    update_sheet_row(sh, index, sheet_values)
+    sh[3].update_row(index + 2, sheet_values)
     
     return feature_to_create_pdf
 
 def safe_scrape(input_info: tuple) -> Optional[Dict]:
-    """Wrapper function to handle scraping errors safely."""
+    """
+    Wrapper function to handle scraping errors safely.
+    
+    Args:
+        input_info: Tuple containing (url, category, subcategory, index)
+    
+    Returns:
+        Dictionary containing product information or None if scraping fails
+    """
     try:
         return scrape(input_info)
     except Exception as e:
@@ -156,24 +140,28 @@ def safe_scrape(input_info: tuple) -> Optional[Dict]:
         update_sheet_row(sh, input_info[3], error_values)
         return None
 
-def collector() -> list:
+def update_sheet_row(sh, index: int, values: list) -> None:
+    """Update a row in the Google Sheet."""
+    sh[3].update_row(index + 2, values)
+
+def collector() -> List[Dict]:
     """Main function to coordinate the scraping process."""
-    # Setup environment
     create_output_folders()
     setup_folders()
     
-    # Initialize sheet and clear old data
     sh = get_sheet()
     sh[3].clear(start='A2', end='G1000')
     
-    # Get input data and add indices
     input_info_block = [(*item, i) for i, item in enumerate(read_inputs(sh))]
     
-    # Run parallel scraping
     with ProcessPoolExecutor(max_workers=5) as executor:
         results = list(executor.map(safe_scrape, input_info_block))
     
-    return results
+    # Filter out None values and sort by original_index
+    valid_results = [r for r in results if r is not None]
+    sorted_results = sorted(valid_results, key=lambda x: x['original_index'])
+    
+    return sorted_results
 
 if __name__ == '__main__':
     collector()
