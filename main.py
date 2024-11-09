@@ -13,6 +13,7 @@ from time import sleep
 from datetime import datetime
 import pytz
 import uvicorn
+
 app = FastAPI()
 
 # Configure CORS
@@ -24,7 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configure Jinja2 templates
 templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def redirect_to_docs():
+    return RedirectResponse(url="/docs")
+
+@app.get("/runner", response_class=HTMLResponse)
+async def update_google_sheet(request: Request):
+    return templates.TemplateResponse("loading.html", {"request": request})
 
 @app.get("/generate_pdf")
 async def generate_pdf():
@@ -61,10 +71,6 @@ async def generate_pdf():
     date_string_now_cdmx = datetime.now(timezoneodmx).strftime("%Y-%m-%d %H:%M:%S")
     sh[1].update_value('E9', "completed at: " + date_string_now_cdmx)
     
-    # Update both URLs in the sheet
-    sh[1].update_value('C16', non_ocr_url)
-    sh[1].update_value('C17', ocr_url)
-    
     return {
         "non_ocr_url": non_ocr_url,
         "ocr_url": ocr_url
@@ -73,5 +79,9 @@ async def generate_pdf():
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 8080))
-    import asyncio
-    asyncio.run(generate_pdf())
+    # Uncomment the following line to run the server directly
+    uvicorn.run(app, host=host, port=port)
+    
+    # For development/testing, use this to run generate_pdf directly
+    # import asyncio
+    # asyncio.run(generate_pdf())
